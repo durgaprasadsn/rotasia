@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">rotasia</string>
+    <string name="title_activity_main">rotasia</string>
+    <string name="package_name">com.example.rotasia</string>
+    <string name="custom_url_scheme">com.example.rotasia</string>
+</resources>
