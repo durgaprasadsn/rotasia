@@ -9,141 +9,105 @@ import { Alert } from '@mui/material';
 
 const Register = () => {
     // State to store the fetched data
-    const [registerState, setRegisterState] = useState({});
-    const [projects, setProjects] = useState([]);
-    const [selectedProject, setSelectedProject] = useState(null);
-    const [isSuccessAlertVisible, setSuccessAlertVisible] = useState(false);
+    const [data, setData] = useState({});
+    const [selectedDate, setSelectedDate] = useState(null);
 
-    const handleChange=(e)=>{
-        setRegisterState({...registerState,[e.target.id]:e.target.value})
-    }
-    const reference = ref(db, "projects/");
-    
     useEffect(() => {
-        // Subscribe to changes in the database
-        const unsubscribe = onValue(reference, (snapshot) => {
-          const dataFromDB = snapshot.val();
-          if (!!dataFromDB) {
-            // Convert the object into an array of projects
-            const projectsArray = Object.entries(dataFromDB).map(([key, value]) => ({
-                projectName: key,
-                ...value,
-            }));
-            console.log(projectsArray);
-            setProjects(projectsArray);
-          } else {
-            console.log("Data not found");
-            setProjects([]);
-          }
-        });
+      // Fetch data from the database
+      const reference = ref(db, '/dates');
+      onValue(reference, (snapshot) => {
+        const fetchedData = snapshot.val();
+        setData(fetchedData);
+      });
+    }, []);
+  
+
+    const finalData = {};
+    useEffect(() => {
+      const reference = ref(db, '/delegates');
+      onValue(reference, (snapshot) => {
+        const fetchedData = snapshot.val();
+        if (fetchedData) {
+          const summaryData = {};
+
+          // Loop through each user
+          Object.keys(fetchedData).forEach((user) => {
+            // Loop through each date for the user
+            console.log("User " + JSON.stringify(user));
+            Object.keys(fetchedData[user]).forEach((key) => {
+              const value = fetchedData[user][key];
+              // console.log("Check the split " + key.split("-").length);
+              if ((key.split("-")).length > 1) {
+                summaryData.key = summaryData.key || { };
+                console.log("Date " + key);
+                Object.keys(fetchedData[user][key]).forEach((temp) => {
+                  if (temp == "food") {
+                    summaryData.key.food = summaryData.key.food || { breakfast: 0, lunch: 0, dinner: 0 };
+                    Object.keys(fetchedData[user][key][temp]).forEach((foodCategory) => {
+                      console.log("Category " + foodCategory);
+                      summaryData.key.food[foodCategory] += fetchedData[user][key][temp][foodCategory] === 'Yes' ? 1 : 0;
+                    })
+                  } else if (temp == "checkedin") {
+                    summaryData.checkedin = (summaryData.checkedin || 0) + 1;
+                  }
+                });
+              } else if (key == "logistics"){
+                console.log("Logs" + key + " " + value);
+                // Update summary for logistics
+                if (fetchedData[user][key] =="Yes") {
+                  summaryData.logistics = (summaryData.logistics || 0) + 1;
+                }
+                
+                // Update summary for checkedin
+                // summaryData.checkedin = (summaryData.checkedin || 0) + (value.checkedin === 'Yes' ? 1 : 0);
+              }
+              console.log("Summary " + JSON.stringify(summaryData));
+              // Update summary for each food category
+              // Object.keys(value.food).forEach((foodCategory) => {
+              //   summaryData.food[foodCategory] += value.food[foodCategory] === 'Yes' ? 1 : 0;
+              // });
+            });
+          });
+        }
+      });
+    })
+
+    const dates = Object.keys(data);
+  
+    const handleDateChange = (event) => {
+      setSelectedDate(event.target.value);
+    };
     
-        // Clean up the subscription when the component unmounts
-        return () => unsubscribe();
-      }, []);
-    // onValue(reference, (snapshot) => {
-    //     const dataFromDB = snapshot.val();
-    //     if (!!dataFromDB) {
-    //         // console.log(data);
-    //         setData(dataFromDB);
-    //         for (const [key, value] of Object.entries(dataFromDB)) {
-    //             console.log(key, value);
-    //         }
-    //     } else {
-    //         console.log("Data not found");
-    //     }
-    // })
-
-    // Function to handle project selection
-  const handleProjectSelect = (project) => {
-    console.log("Project selected " + JSON.stringify(project));
-    console.log(registerState);
-    setSelectedProject(project);
-    setRegisterState({});
-    setSuccessAlertVisible(false);
-  };
-
-  // Function to update project details
-  const handleUpdate = async () => {
-    if (selectedProject) {
-        console.log(registerState);
-        console.log("On Click of Update " + selectedProject.projectName + " " + auth.currentUser.uid);
-        // const projectRef = ref(db, `${selectedProject.projectName}/${auth.currentUser.uid}`);
-        const path_update = selectedProject.projectName + "/" + auth.currentUser.uid;
-        const updates = {}
-        updates[path_update] = registerState;
-        update(ref(db), updates).then( () => {
-            console.log("SUCCESS");
-            setSuccessAlertVisible(true);
-            // setRegisterState({});
-            setSelectedProject(null);
-          } ) .catch((error) => {
-            console.log(error)
-          } )
-        // Update the project details in the database
-    //   update(projectRef, {
-    //     bid_amount: selectedProject.bid_amount,
-    //     company_name: selectedProject.company_name,
-    //     owner_name: selectedProject.owner_name,
-    //   }).then(() => {
-    //     console.log(`Project ${selectedProject.projectName} updated successfully!`);
-    //   }).catch((error) => {
-    //     console.error('Error updating project:', error);
-    //   });
-    }
-  };
   return (<>
       <NavbarSimple />
       {/* Dropdown to select a project */}
-      <SelectBasic
+      {/* <SelectBasic
         options={projects}
         onChange={handleProjectSelect}
         value={selectedProject}
         labelKey="projectName"
-      />
+      /> */}
 
-      {/* Input fields to update project details */}
-      {selectedProject && (
+      <div>
+      <label htmlFor="dateSelector">Select a Date:</label>
+      <select id="dateSelector" onChange={handleDateChange}>
+        <option value="">Select a date</option>
+        {dates.map((date) => (
+          <option key={date} value={date}>
+            {date}
+          </option>
+        ))}
+      </select>
+
+      {selectedDate && (
         <div>
-            <br></br>
-          {/* <h2>{selectedProject.projectName}</h2> */}
-          {/* Dynamically generate input fields based on keys */}
-          {selectedProject && Object.keys(selectedProject).map((key, value) => (
-            key !== "projectName" && (<div key={key}>
-              <Input
-                            key={key}
-                            handleChange={handleChange}
-                            // value={selectedProject[key]}
-                            labelText={key}
-                            labelFor={key}
-                            id={key}
-                            name={key}
-                            // type={Text}
-                            isRequired={true}
-                            placeholder={key}
-                            />
-              {/* <input
-                type="text"
-                value={selectedProject[key]}
-                onChange={(e) => setSelectedProject({
-                  ...selectedProject,
-                  [key]: e.target.value,
-                })}
-              /> */}
-            </div>)
-          ))}
-          <div className="flex justify-center">
-            <Button variant="contained" onClick={handleUpdate}>
-              Update Project
-            </Button>
-          </div>
-          {/* <Button className='mx-auto my-4 flex justify-center' variant="contained" onClick={handleUpdate}>Update Project</Button> */}
+          <p>Date: {selectedDate}</p>
+          <p>Checked In: "Checkiin"</p>
+          <p>Name: "Name"</p>
+          {/* Add more details based on your structure */}
         </div>
       )}
-      {isSuccessAlertVisible && (
-        <Alert severity="success">
-          {/* <AlertTitle>Success</AlertTitle> */}
-          Successfully Updated.
-        </Alert>)}
+    </div>
       </>
   );
 };

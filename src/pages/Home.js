@@ -25,8 +25,11 @@ const Home = () => {
   const [operationType, setOperationType] = useState(null);
   const [nameFromDB, setNameFromDB] = useState(null);
   const [open, setOpen] = React.useState(false);
-  const [selectedOption, setSelectedOption] = useState('option1'); // Initial selected option
+  const [selectedOption, setSelectedOption] = useState(''); // Initial selected option
   const [valid, setValid] = useState(false);
+  const [data, setData] = useState(null);
+  const [foodValid, setFoodValid] =useState(true);
+  const [foodItemList, setFoodItemList] = useState(null);
  
   const handleOpen = () => setOpen(!open);
 
@@ -54,14 +57,15 @@ const Home = () => {
       onValue(reference, (snapshot) => {
         const dataFromDB = snapshot.val();
         if (!!dataFromDB) {
-          console.log("Name from DB:", dataFromDB.name);
+          setData(dataFromDB);
+          // console.log("Name from DB:", dataFromDB.name);
           const ret_dates = Object.keys(dataFromDB);
-          console.log("Check " + ret_dates + " " + typeof(ret_dates));
+          // console.log("Check " + ret_dates + " " + typeof(ret_dates));
           const ret_date = ret_dates.includes(curr_date) ?  curr_date : null;
-          console.log("Temp check " + ret_date);
+          // console.log("Temp check " + ret_date);
           
           if (ret_date && ret_date == curr_date) {
-            console.log("Today is correct" + operationType);
+            // console.log("Today is correct" + operationType);
             if (operationType === "Checkin") {
               if (dataFromDB[ret_date].checkedin === "No") {
                 // Update the checkin details
@@ -72,12 +76,33 @@ const Home = () => {
               }
             } else if (operationType === "Food") {
               // Food operation has to be performed
-              setNameFromDB(dataFromDB.name);
-              setValid(true);
+              console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
+              const food_data = dataFromDB[ret_date].food;
+              let original = ["breakfast", "lunch", "dinner"];
+
+              for (let i = original.length - 1; i >= 0; i--) {
+                console.log("Check value " + food_data[original[i]] + " " + original[i]);
+                  if (food_data[original[i]] == "Yes") {
+                      original.splice(i, 1);
+                  }
+              }
+
+              setFoodItemList(original);
+              if (original.length > 0) {
+                setNameFromDB(dataFromDB.name);
+                setValid(true);
+              } else {
+                setNameFromDB(dataFromDB.name + " Food is already Served");
+              }
+              
             } else if (operationType === "Logistics") {
               // Logistics operation has to be performed
-              setNameFromDB(dataFromDB.name);
-              setValid(true);
+              if (dataFromDB[ret_date].logistics === "No") {
+                setNameFromDB(dataFromDB.name);
+                setValid(true);
+              } else {
+                setNameFromDB(dataFromDB.name + " already received");
+              }
             }
           } else {
             console.log("Today is not correct");
@@ -122,27 +147,55 @@ const Home = () => {
 
   const handleOptionChange = (event) => {
     setSelectedOption(event.target.value);
+    // console.log("Value after change " + selectedOption + event.target.value);
+    // console.log("Data " + JSON.stringify(data) +  curr_date);
   };
 
   const handleConfirmSelection = () => {
     console.log("Check the values " + result.text + " " + operationType + " " + valid);
     if (valid) {
       if (operationType === "Food") {
-        // handleFoodOperation(result.text);
+        handleFoodOperation(result.text);
       } else if (operationType === "Checkin") {
         handleCheckinOperation(result.text);
       } else if(operationType === "Logistics") {
-        // handleLogsOperation(result.text);
+        handleLogsOperation(result.text);
       }
     }
     setResult(null);
     setNameFromDB(null);
     setValid(false);
+    setSelectedOption('');
+  }
+
+  const handleLogsOperation = (userid) => {
+    const path_update = "delegates/" + userid + "/";
+
+    const updates = {"logistics" : "Yes"};
+    console.log(updates);
+    update(ref(db, path_update), updates).then( () => {
+      console.log("SUCCESS");
+    } ) .catch((error) => {
+      console.log(error);
+    } )    
+  }
+
+  const handleFoodOperation = (userid) => {
+    const path_update = "delegates/" + userid + "/" + curr_date + "/food/";
+    console.log("Food check " + selectedOption);
+
+    const updates = {[selectedOption] : "Yes"};
+    console.log(updates);
+    update(ref(db, path_update), updates).then( () => {
+        console.log("SUCCESS");
+      } ) .catch((error) => {
+        console.log(error);
+      } )
   }
 
   const handleCheckinOperation = (userid) => {
     // const updates = {}
-    const path_update = "delegates/" + result.text + "/" + curr_date + "/";
+    const path_update = "delegates/" + userid + "/" + curr_date + "/";
     console.log("Check the path " + path_update);
     const updates = {"checkedin": "Yes"};
 
@@ -159,6 +212,9 @@ const Home = () => {
     setValid(false);
   }
 
+  // useEffect((selectedOption) => {
+  //   console.log(selectedOption);
+  // }, selectedOption);
   
 
   return (
@@ -185,19 +241,37 @@ const Home = () => {
         {(!scanning && result) ? (<>
           <Dialog open={true} handler={handleOpen} className="max-w-lg mx-auto">
             <div className='flex flex-col items-center p-3'>
-              <DialogHeader>Delegate Details</DialogHeader>
+              <DialogHeader>Delegate Status</DialogHeader>
               <DialogBody>
                 {nameFromDB ? (<>
                       <p>{nameFromDB}</p> 
-                      {operationType === "Food" &&
+                      {(operationType === "Food" &&
+                      // <RadioGroup
+                      //   aria-label="options"
+                      //   name="options"
+                      //   value={selectedOption}
+                      //   onChange={handleOptionChange}>
+                      //   <FormControlLabel value="breakfast" control={<Radio />} label="Breakfast" />
+                      //   <FormControlLabel value="lunch" control={<Radio />} label="Lunch" />
+                      //   <FormControlLabel value="dinner" control={<Radio />} label="Dinner" />
+                      // </RadioGroup>
+
+                      foodItemList) ? 
                       <RadioGroup
                         aria-label="options"
                         name="options"
                         value={selectedOption}
                         onChange={handleOptionChange}>
-                        <FormControlLabel value="option1" control={<Radio />} label="Option 1" />
-                        <FormControlLabel value="option2" control={<Radio />} label="Option 2" />
-                      </RadioGroup>}
+                      {foodItemList.map((item) => (
+                        <FormControlLabel
+                          key={item} // Replace with a unique identifier for each item
+                          value={item}
+                          control={<Radio />}
+                          label={item}
+                        />
+                      ))}
+                      </RadioGroup> : <></>
+                    }
                     </>) : (
                       <p>Name not found in DB</p>
                     )}
