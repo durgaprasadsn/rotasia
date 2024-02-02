@@ -13,6 +13,7 @@ import {
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import { Alert } from '@mui/material';
 
 import { ref, onValue, update } from '@firebase/database';
 import { auth, db } from '../services/firebase';
@@ -30,6 +31,7 @@ const Home = () => {
   const [data, setData] = useState(null);
   const [foodValid, setFoodValid] =useState(true);
   const [foodItemList, setFoodItemList] = useState(null);
+  const [isSuccessAlertVisible, setSuccessAlertVisible] = useState(false);
  
   const handleOpen = () => setOpen(!open);
 
@@ -47,39 +49,77 @@ const Home = () => {
     [setOperationType, setScanning]
   );
 
-  console.log(dayjs().format('DD-MM-YYYY'));
-  const curr_date = dayjs().format('DD-MM-YYYY');
+  var default_url = "https://script.google.com/macros/s/AKfycbyHEgKYAqPAo5PkfN-o81c3gVEN5pLZoAFt8Jky8o6S28hQk3QK-c683_mOdI38iTk/exec";
+
+  console.log(dayjs().format('DD/MM/YYYY'));
+  const curr_date = dayjs().format('DD/MM/YYYY');
   const errorText = "Something is Wrong";
   const notFound = "User not found";
+  var day_selected = -1;
+  var location = [[5, 6, 7, 8], [9, 10, 11, 12]];
+
+  function create_get_url(date, userid) {
+    return default_url + '?date=' + curr_date + '&name=' + userid;
+  }
+
+  function create_post_url(type, user, date) {
+    var url = default_url + '?user=' + user + '&date=' + date;
+    if (type === "Checkin") {
+      url += "&checkedin=Yes";
+    }
+    if (type === "Food") {
+      url += "&food_type=" + selectedOption;
+    }
+    if (type === "Logistics") {
+      url += "&logistics=Yes";
+    }
+    return url;
+  }
+
   const fetchNameFromDB = useCallback(() => {
     if (result && operationType) {
       const reference = ref(db, "delegates/" + result.text);
-      onValue(reference, (snapshot) => {
-        const dataFromDB = snapshot.val();
-        if (!!dataFromDB) {
-          setData(dataFromDB);
-          // console.log("Name from DB:", dataFromDB.name);
-          const ret_dates = Object.keys(dataFromDB);
-          // console.log("Check " + ret_dates + " " + typeof(ret_dates));
-          const ret_date = ret_dates.includes(curr_date) ?  curr_date : null;
-          // console.log("Temp check " + ret_date);
-          
-          if (ret_date && ret_date == curr_date) {
+      console.log("String to get " + create_get_url(curr_date, result.text));
+      fetch(create_get_url(curr_date, result.text))
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            console.log("Sucess received");
+            var selected = data.day;
+            if (selected == 'Day1') {
+              day_selected = 0;
+            } else if (selected == 'Day2') {
+              day_selected = 1;
+            }
+          } else {
+            console.log("Failure received");
+            setNameFromDB(null);
+            return;
+          }
+          const dataFromDB = data.response;
+          console.log("Check the status and data  " + operationType + " " + data.success + " " + dataFromDB);
+          if (!!dataFromDB) {
+            setData(dataFromDB);
             // console.log("Today is correct" + operationType);
             if (operationType === "Checkin") {
-              if (dataFromDB[ret_date].checkedin === "No") {
+              if (dataFromDB[location[0][0]-1] === "No") {
                 // Update the checkin details
-                setNameFromDB(dataFromDB.name);
+                console.log("Checked in is no");
+                setNameFromDB(dataFromDB[0]);
                 setValid(true);
               } else {
-                setNameFromDB(dataFromDB.name + " already checkedin");
+                console.log("Checkedin yes");
+                setNameFromDB(dataFromDB[0] + " already checkedin");
               }
             } else if (operationType === "Food") {
               // Food operation has to be performed
-              console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
-              const food_data = dataFromDB[ret_date].food;
+              // console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
+              const food_data = {};
               let original = ["breakfast", "lunch", "dinner"];
-
+              
+              for (let i = 0; i < original.length; i++) {
+                food_data[original[i]] = dataFromDB[location[0][i+1]-1];
+              }
               for (let i = original.length - 1; i >= 0; i--) {
                 console.log("Check value " + food_data[original[i]] + " " + original[i]);
                   if (food_data[original[i]] == "Yes") {
@@ -89,30 +129,85 @@ const Home = () => {
 
               setFoodItemList(original);
               if (original.length > 0) {
-                setNameFromDB(dataFromDB.name);
+                setNameFromDB(dataFromDB[0]);
                 setValid(true);
               } else {
-                setNameFromDB(dataFromDB.name + " Food is already Served");
+                setNameFromDB(dataFromDB[0] + " Food is already Served");
               }
               
             } else if (operationType === "Logistics") {
               // Logistics operation has to be performed
-              if (dataFromDB[ret_date].logistics === "No") {
-                setNameFromDB(dataFromDB.name);
+              if (dataFromDB[3] === "No") {
+                setNameFromDB(dataFromDB[0]);
                 setValid(true);
               } else {
-                setNameFromDB(dataFromDB.name + " already received");
+                setNameFromDB(dataFromDB[0] + " already received");
               }
             }
           } else {
-            console.log("Today is not correct");
-            setNameFromDB(errorText);
+            console.log("Data not found");
+            setNameFromDB(null); // Set name to null if data is not found
           }
-        } else {
-          console.log("Data not found");
-          setNameFromDB(null); // Set name to null if data is not found
-        }
-      });
+        });
+      // onValue(reference, (snapshot) => {
+      //   const dataFromDB = snapshot.val();
+      //   if (!!dataFromDB) {
+      //     setData(dataFromDB);
+      //     // console.log("Name from DB:", dataFromDB.name);
+      //     const ret_dates = Object.keys(dataFromDB);
+      //     // console.log("Check " + ret_dates + " " + typeof(ret_dates));
+      //     const ret_date = ret_dates.includes(curr_date) ?  curr_date : null;
+      //     // console.log("Temp check " + ret_date);
+          
+      //     if (ret_date && ret_date == curr_date) {
+      //       // console.log("Today is correct" + operationType);
+      //       if (operationType === "Checkin") {
+      //         if (dataFromDB[ret_date].checkedin === "No") {
+      //           // Update the checkin details
+      //           setNameFromDB(dataFromDB.name);
+      //           setValid(true);
+      //         } else {
+      //           setNameFromDB(dataFromDB.name + " already checkedin");
+      //         }
+      //       } else if (operationType === "Food") {
+      //         // Food operation has to be performed
+      //         console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
+      //         const food_data = dataFromDB[ret_date].food;
+      //         let original = ["breakfast", "lunch", "dinner"];
+
+      //         for (let i = original.length - 1; i >= 0; i--) {
+      //           console.log("Check value " + food_data[original[i]] + " " + original[i]);
+      //             if (food_data[original[i]] == "Yes") {
+      //                 original.splice(i, 1);
+      //             }
+      //         }
+
+      //         setFoodItemList(original);
+      //         if (original.length > 0) {
+      //           setNameFromDB(dataFromDB.name);
+      //           setValid(true);
+      //         } else {
+      //           setNameFromDB(dataFromDB.name + " Food is already Served");
+      //         }
+              
+      //       } else if (operationType === "Logistics") {
+      //         // Logistics operation has to be performed
+      //         if (dataFromDB[ret_date].logistics === "No") {
+      //           setNameFromDB(dataFromDB.name);
+      //           setValid(true);
+      //         } else {
+      //           setNameFromDB(dataFromDB.name + " already received");
+      //         }
+      //       }
+      //     } else {
+      //       console.log("Today is not correct");
+      //       setNameFromDB(errorText);
+      //     }
+      //   } else {
+      //     console.log("Data not found");
+      //     setNameFromDB(null); // Set name to null if data is not found
+      //   }
+      // });
     } else {
       console.log("Result or operationType is not available");
       setNameFromDB(null);
@@ -121,6 +216,7 @@ const Home = () => {
 
   const handleOperation = useCallback(() => {
     fetchNameFromDB();
+    setSuccessAlertVisible(false);
   }, [fetchNameFromDB]);
 
   useEffect(() => {
@@ -138,7 +234,7 @@ const Home = () => {
         console.log("Operation Type " + operationType);
         stopScanning();
         handleOperation();
-        // setUserSelection(null);
+        setSuccessAlertVisible(false);
         
       }
     },
@@ -166,6 +262,7 @@ const Home = () => {
     setNameFromDB(null);
     setValid(false);
     setSelectedOption('');
+    setSuccessAlertVisible(false);
   }
 
   const handleLogsOperation = (userid) => {
@@ -173,11 +270,16 @@ const Home = () => {
 
     const updates = {"logistics" : "Yes"};
     console.log(updates);
-    update(ref(db, path_update), updates).then( () => {
-      console.log("SUCCESS");
-    } ) .catch((error) => {
-      console.log(error);
-    } )    
+    fetch(create_post_url(operationType, userid, curr_date), {
+      method: 'POST',
+    }).then(response => response.json())
+      .then(data => {
+        // Do something with the data
+        console.log("Post return " + data);
+        if (data.success) {
+          setSuccessAlertVisible(true);
+        }
+      });   
   }
 
   const handleFoodOperation = (userid) => {
@@ -186,11 +288,16 @@ const Home = () => {
 
     const updates = {[selectedOption] : "Yes"};
     console.log(updates);
-    update(ref(db, path_update), updates).then( () => {
-        console.log("SUCCESS");
-      } ) .catch((error) => {
-        console.log(error);
-      } )
+    fetch(create_post_url(operationType, userid, curr_date), {
+      method: 'POST',
+    }).then(response => response.json())
+      .then(data => {
+        // Do something with the data
+        console.log("Post return " + data);
+        if (data.success) {
+          setSuccessAlertVisible(true);
+        }
+      });
   }
 
   const handleCheckinOperation = (userid) => {
@@ -198,12 +305,17 @@ const Home = () => {
     const path_update = "delegates/" + userid + "/" + curr_date + "/";
     console.log("Check the path " + path_update);
     const updates = {"checkedin": "Yes"};
-
-    update(ref(db, path_update), updates).then( () => {
-        console.log("SUCCESS");
-      } ) .catch((error) => {
-        console.log(error);
-      } )
+    console.log("Check the url " + create_post_url(operationType, userid, curr_date));
+    fetch(create_post_url(operationType, userid, curr_date), {
+      method: 'POST',
+    }).then(response => response.json())
+      .then(data => {
+        // Do something with the data
+        console.log("Post return " + data);
+        if (data.success) {
+          setSuccessAlertVisible(true);
+        }
+      });
   }
 
   const handleCancelSelection = () => {
@@ -211,11 +323,6 @@ const Home = () => {
     setNameFromDB(null);
     setValid(false);
   }
-
-  // useEffect((selectedOption) => {
-  //   console.log(selectedOption);
-  // }, selectedOption);
-  
 
   return (
     <div>
@@ -234,10 +341,16 @@ const Home = () => {
         </div>
       ) : (
         <>
-        {/* {result ? (<> 
-            <p>{result ? JSON.stringify(result.text) + `${operationType}` : 'No result'}</p> 
-            </>) : (<> </>)} */}
-        {/* <p>Click a button to start scanning</p> */}
+        {isSuccessAlertVisible && (
+          <>
+          <div className='flex flex-col items-center p-3'>
+          <Alert severity="success">
+            {/* <AlertTitle>Success</AlertTitle> */}
+            Successfully Updated.
+          </Alert>
+          </div>
+          </>)
+        }
         {(!scanning && result) ? (<>
           <Dialog open={true} handler={handleOpen} className="max-w-lg mx-auto">
             <div className='flex flex-col items-center p-3'>

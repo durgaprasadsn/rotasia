@@ -5,7 +5,6 @@
   "dependencies": {
     "@capacitor-community/barcode-scanner": "^4.0.1",
     "@capacitor/android": "^5.6.0",
-    "@capacitor/assets": "^3.0.4",
     "@capacitor/camera": "^5.0.8",
     "@capacitor/core": "^5.6.0",
     "@capacitor/ios": "^5.6.0",
@@ -55,6 +54,7 @@
     ]
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.4",
     "@capacitor/cli": "^5.6.0",
     "autoprefixer": "^10.4.17",
     "postcss": "^8.4.33",
