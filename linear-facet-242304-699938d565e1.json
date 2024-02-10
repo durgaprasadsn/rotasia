@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "linear-facet-242304",
+  "private_key_id": "699938d565e16d0b1d1237d08fde4e3e315b2357",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDENf+xySrEl6ay\nEnXLvtHerBJVw7CD0m5tI+V+Pj2FzNK24j7sHf2jAnZvllkJ0fbugHTOA5nPhcIT\n3ppDS95UPp10B2rSwRmpK8RZ3Zv8crBktfkOzDvY5hz4k3JqNRMDOWRQyZpG8atQ\nh+Sw5Xyodff5duty4RBKq0otj0knSQk90TJWAyKOAfPwcs5WWL/TcjBQMAi+bluF\njnUU24h5KFM/m7YqgKJItgkDvBzOVqlg7BrEUI6RDxlDgikaUVANTii/n4VDAQ9W\nO1pTt52vwyf3mk/A1XuY7tjoJmwpbgedQ5NosrryVhG22JCd9IPvRIQOtZ9zHUBI\nv1ahalYrAgMBAAECggEACAHWIfi+LJCtxlWXhg2O/gHSq7pVMUP8qqqM2oaKtzOh\nI8J+497jc2wNzkb58jsl0xzd52xhMgVY4ruyWu21MIXvogUNeHVV6T/2ft5a18YM\nace9VrvB83uMkh5eTHRHBtooPF3F1IBXR+2LySZMXImX6Y/PUvxZUFrGJ67Rwu8X\nSeGXiKnWh96cisePbpABJNMoGdxZITXR2TOh/DVOBRUSncLhKiDZTvL4NIUu31bD\nfrPceYdi+UQ5kXP1Vewd0pvGsdtNdUfFQMplLQXRxHKTV+hePwGFknLV+J3p3cUM\ncJ/+4jTPP+4u7Nf/wgRm186JwhiO8G8woVGNbwx3tQKBgQDoia1Y4pm+DV6L3M0I\n2pwv478shQfnC2Cx0scgnqHtihV73POmuCFxr5VDSE6bdl1HWjQZc2XxnEccXo2+\nfyAp4thdwX/XXU8Voa7VqeuCiRFTDPGeINbU4sENo9Xk8dFbUQ5/3ou5urkgEX/1\nttymWghwGuYw5gVGwUEpwqmeLQKBgQDYAgTL+lbyuIZExFWusMVZP9XEkdN4IMCC\nBVaB5UdqLQrs8CEamOW6jF7tUBb8VxmDMjBaxp2z6f5rev3RLiw+dPfABSjKUVtl\nAA6OMfUwhM0hr0sErFEbA0oJ61reEITd6UnAMnSWzYPhIb1vZZ5EpvQ8F/Yx0Xju\nhVJcGQHUtwKBgQCMu14U8DcZpV+2B7BzDlL+TLhTikNpGiKwHB91Z2wapbow110C\nZmefNSOBr84bGjyDxVzIlmV5HxqOWc8xHiDqGKbXvxbO0WLedZapKwgkXS4F9Ex6\nZed+uakaxy/ZOlx5Bope6uHnStFlThICNGQ/rTd0GWN87oj89FKqomwjFQKBgQDM\nYgyb3EEM5F/XDVZtNkFk0yu3FKvczFCaNebGfWT3J6tgyUzpV6Z2vn7LWK6HEPrI\n0mJCYg+xvkPG+tbSaDfg2Nfazobr99LcXBNppAd1YxKdPrlisJEFWDVj8VdHKqYt\nOqFXw+XhEpAoIr6VercoCjip65o9RRCBz5BAKEE9PQKBgHpNUa0LqP1z+lQgGbq4\nyeq2hM2i+o58RVSCKQ2gpwuycZLuxxuN5E5Gu8IzReOWrU/A017cHgVaqa9gmTgn\nLI9hlAX4jI7czqgk2voN8gDuYE+ovFhob22XfPgbFIzxeR4/KkTR5/dIaMJAc40/\nP2RrRXfbwHuFnneQ1a4Zscr5\n-----END PRIVATE KEY-----\n",
+  "client_email": "rotasia@linear-facet-242304.iam.gserviceaccount.com",
+  "client_id": "116824200614618232783",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/rotasia%40linear-facet-242304.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

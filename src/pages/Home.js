@@ -38,6 +38,7 @@ const Home = () => {
   const stopScanning = useCallback(() => {
     setScanning(false);
     // Perform any additional cleanup or actions if needed
+    setSuccessAlertVisible(false);
   }, [setScanning]);
 
   const startScanning = useCallback(
@@ -49,21 +50,26 @@ const Home = () => {
     [setOperationType, setScanning]
   );
 
-  var default_url = "https://script.google.com/macros/s/AKfycbyHEgKYAqPAo5PkfN-o81c3gVEN5pLZoAFt8Jky8o6S28hQk3QK-c683_mOdI38iTk/exec";
+  // var default_url = "https://script.google.com/macros/s/AKfycbwILDYl0_HJgMsybfYEY0f0KcvU3utj_bFOKiyjcl9BnnnsVRd7-HjkLbecYbk8pRLi/exec";
+  var default_url = "http://127.0.0.1:5000";
 
   console.log(dayjs().format('DD/MM/YYYY'));
   const curr_date = dayjs().format('DD/MM/YYYY');
   const errorText = "Something is Wrong";
   const notFound = "User not found";
   var day_selected = -1;
-  var location = [[5, 6, 7, 8], [9, 10, 11, 12]];
+  var location = [['AI', 'AJ', 'AK', 'AL'], ['AM', 'AN', 'AO', 'AP'], ['AQ', 'AR', 'AS', 'AT'], ['AU', 'AV', 'AW', 'AX']];
 
+  var userid_location = 'C';
+  var logistics_location = 'AH';
   function create_get_url(date, userid) {
-    return default_url + '?date=' + curr_date + '&name=' + userid;
+    // return default_url + '?date=' + date + '&name=' + userid;
+    return default_url + '/get_user?date=' + date + '&name=' + userid;
   }
 
   function create_post_url(type, user, date) {
-    var url = default_url + '?user=' + user + '&date=' + date;
+    // var url = default_url + '?user=' + user + '&date=' + date;
+    var url = default_url + '/update_user?user=' + user + '&date=' + date;
     if (type === "Checkin") {
       url += "&checkedin=Yes";
     }
@@ -76,6 +82,15 @@ const Home = () => {
     return url;
   }
 
+  function columnNameToIndex(columnName) {
+    var index = 0;
+    for (var i = 0; i < columnName.length; i++) {
+        index = index * 26 + (columnName.charCodeAt(i) - 'A'.charCodeAt(0) + 1);
+    }
+    console.log("Index here " + index);
+    return index - 1; // Adjust index to be 0-based
+  }
+
   const fetchNameFromDB = useCallback(() => {
     if (result && operationType) {
       const reference = ref(db, "delegates/" + result.text);
@@ -83,6 +98,7 @@ const Home = () => {
       fetch(create_get_url(curr_date, result.text))
         .then(response => response.json())
         .then(data => {
+          console.log("data received " + JSON.stringify(data));
           if (data.success) {
             console.log("Sucess received");
             var selected = data.day;
@@ -90,6 +106,10 @@ const Home = () => {
               day_selected = 0;
             } else if (selected == 'Day2') {
               day_selected = 1;
+            } else if (selected == 'Day3') {
+              day_selected = 2;
+            } else if (selected == 'Day4') {
+              day_selected = 3;
             }
           } else {
             console.log("Failure received");
@@ -102,14 +122,16 @@ const Home = () => {
             setData(dataFromDB);
             // console.log("Today is correct" + operationType);
             if (operationType === "Checkin") {
-              if (dataFromDB[location[0][0]-1] === "No") {
+              let index = columnNameToIndex('AI');
+              console.log("Durga check here " + index + " " + dataFromDB[index]);
+              if (dataFromDB[columnNameToIndex(location[day_selected][0])] === "No") {
                 // Update the checkin details
                 console.log("Checked in is no");
-                setNameFromDB(dataFromDB[0]);
+                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
                 setValid(true);
               } else {
                 console.log("Checkedin yes");
-                setNameFromDB(dataFromDB[0] + " already checkedin");
+                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)] + " already checkedin");
               }
             } else if (operationType === "Food") {
               // Food operation has to be performed
@@ -118,7 +140,7 @@ const Home = () => {
               let original = ["breakfast", "lunch", "dinner"];
               
               for (let i = 0; i < original.length; i++) {
-                food_data[original[i]] = dataFromDB[location[0][i+1]-1];
+                food_data[original[i]] = dataFromDB[columnNameToIndex(location[day_selected][i+1])];
               }
               for (let i = original.length - 1; i >= 0; i--) {
                 console.log("Check value " + food_data[original[i]] + " " + original[i]);
@@ -129,19 +151,19 @@ const Home = () => {
 
               setFoodItemList(original);
               if (original.length > 0) {
-                setNameFromDB(dataFromDB[0]);
+                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
                 setValid(true);
               } else {
-                setNameFromDB(dataFromDB[0] + " Food is already Served");
+                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)] + " Food is already Served");
               }
               
             } else if (operationType === "Logistics") {
               // Logistics operation has to be performed
-              if (dataFromDB[3] === "No") {
-                setNameFromDB(dataFromDB[0]);
+              if (dataFromDB[columnNameToIndex(logistics_location)] === "No") {
+                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
                 setValid(true);
               } else {
-                setNameFromDB(dataFromDB[0] + " already received");
+                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)] + " already received");
               }
             }
           } else {
