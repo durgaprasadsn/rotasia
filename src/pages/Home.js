@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from "react-router-dom"
 import Button from '@mui/material/Button';
 import QrScanner from 'react-qr-scanner';
 import NavbarSimple from '../components/Navbar';
@@ -19,6 +20,8 @@ import { ref, onValue, update } from '@firebase/database';
 import { auth, db } from '../services/firebase';
 import { data } from 'autoprefixer';
 import { CurrencyExchange } from '@mui/icons-material';
+import Login from '../components/Login';
+import TextField from '@mui/material/TextField';
 
 const Home = () => {
   const [result, setResult] = useState(null);
@@ -32,9 +35,18 @@ const Home = () => {
   const [foodValid, setFoodValid] =useState(true);
   const [foodItemList, setFoodItemList] = useState(null);
   const [isSuccessAlertVisible, setSuccessAlertVisible] = useState(false);
+  const [delegateID, setDelegateID] = useState("");
  
   const handleOpen = () => setOpen(!open);
-
+  const navigate = useNavigate()
+    useEffect(() => {
+        console.log("Chck auth " + window.localStorage.getItem("authenticated"));
+        if (window.localStorage.getItem("authenticated") == "true") {
+            navigate("/home");
+        } else {
+            navigate("/");
+        }
+    })
   const stopScanning = useCallback(() => {
     setScanning(false);
     // Perform any additional cleanup or actions if needed
@@ -51,7 +63,8 @@ const Home = () => {
   );
 
   // var default_url = "https://script.google.com/macros/s/AKfycbwILDYl0_HJgMsybfYEY0f0KcvU3utj_bFOKiyjcl9BnnnsVRd7-HjkLbecYbk8pRLi/exec";
-  var default_url = "http://127.0.0.1:5000";
+  // var default_url = "http://127.0.0.1:5000";
+  var default_url = "https://flask-acb6o9jhe-durgaprasadsns-projects.vercel.app";
 
   console.log(dayjs().format('DD/MM/YYYY'));
   const curr_date = dayjs().format('DD/MM/YYYY');
@@ -346,11 +359,26 @@ const Home = () => {
     setValid(false);
   }
 
+  function handleIDSubmit() {
+    console.log("Check the entered value " + delegateID);
+  }
+
+  const handleChangeDelegateID = (event) => {
+    setDelegateID(event.target.value);
+  };
+
   return (
     <div>
+      {window.localStorage.getItem("authenticated") == "true" ?
+      <>
         <NavbarSimple />
       {scanning ? (
         <div className='flex flex-col items-center p-3'>
+            <TextField id="delegate_id" label="Delegate ID" onChange={handleChangeDelegateID}/>
+            <br/>
+            <Button id="delegate_id_btn" type="submit" variant="contained" size="small" onClick={handleIDSubmit}>Submit</Button>
+            <br/>
+            <p>OR</p>
             <QrScanner onScan={handleScan} onError={handleError} constraints={{
             audio: false,
             video: { facingMode: "environment" }
@@ -381,16 +409,6 @@ const Home = () => {
                 {nameFromDB ? (<>
                       <p>{nameFromDB}</p> 
                       {(operationType === "Food" &&
-                      // <RadioGroup
-                      //   aria-label="options"
-                      //   name="options"
-                      //   value={selectedOption}
-                      //   onChange={handleOptionChange}>
-                      //   <FormControlLabel value="breakfast" control={<Radio />} label="Breakfast" />
-                      //   <FormControlLabel value="lunch" control={<Radio />} label="Lunch" />
-                      //   <FormControlLabel value="dinner" control={<Radio />} label="Dinner" />
-                      // </RadioGroup>
-
                       foodItemList) ? 
                       <RadioGroup
                         aria-label="options"
@@ -429,7 +447,8 @@ const Home = () => {
         
         </>
       )}
-      
+      </>
+      : <Login/>}
     </div>
   );
 };

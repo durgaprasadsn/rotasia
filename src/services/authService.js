@@ -2,6 +2,7 @@
 import { auth, db } from './firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { ref, set, get, child, onValue } from '@firebase/database';
+import { setAuthenticated } from './preferences';
 
 function isAuthenticated() {
     return auth.currentUser;
@@ -31,6 +32,8 @@ const logIn = async (email, password) => {
 const logOut = async () => {
   try {
     await signOut(auth);
+    setAuthenticated("false");
+    window.localStorage.setItem("authenticated", "false");
   } catch (error) {
     console.log("Error in Logout " + error);
     throw error;

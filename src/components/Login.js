@@ -4,6 +4,9 @@ import FormAction from "./FormAction";
 import Input from "./Input";
 import { logIn, isAuthenticated } from "../services/authService";
 import { useNavigate } from 'react-router';
+import { auth } from '../services/firebase';
+import { checkAuthenticated, setAuthenticated } from '../services/preferences';
+import { Preferences } from '@capacitor/preferences';
 
 const fields=loginFields;
 let fieldsState = {};
@@ -18,7 +21,12 @@ export default function Login(){
     const handleChange=(e)=>{
         setLoginState({...loginState,[e.target.id]:e.target.value})
     }
-
+    var authentication = window.localStorage.getItem("authenticated")
+    
+    if (authentication == "true") {
+        console.log("Authenticated here ");
+        navigate('/home');
+    }
     const handleSubmit = (e) => {
         e.preventDefault();
         console.log(loginState);
@@ -43,11 +51,16 @@ export default function Login(){
             // console.log("User " + user.email);
             if (user) {
                 console.log(user.email);
+                window.localStorage.setItem("authenticated", "true");
+                setAuthenticated("true");
                 if (user.email === "admin@gmail.com") {
                     navigate("/admin/timeupdate");
                 } else {
                     navigate("/home");
                 }
+            } else {
+                window.localStorage.setItem("authenticated", "false");
+                setAuthenticated("false");
             }
         } catch (error) {
             console.log(error);

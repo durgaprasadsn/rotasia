@@ -10,7 +10,7 @@ def generate_qr(value, filename):
     qrcode.save(
         filename,
         scale = 80,
-        border = 0
+        border = 1
         )
     return filename
 
