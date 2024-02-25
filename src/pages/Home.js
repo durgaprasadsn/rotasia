@@ -22,6 +22,10 @@ import { data } from 'autoprefixer';
 import { CurrencyExchange } from '@mui/icons-material';
 import Login from '../components/Login';
 import TextField from '@mui/material/TextField';
+import FormLabel from '@mui/material/FormLabel';
+import FormControl from '@mui/material/FormControl';
+import FormGroup from '@mui/material/FormGroup';
+import Checkbox from '@mui/material/Checkbox';
 
 const Home = () => {
   const [result, setResult] = useState(null);
@@ -33,16 +37,28 @@ const Home = () => {
   const [valid, setValid] = useState(false);
   const [data, setData] = useState(null);
   const [foodValid, setFoodValid] =useState(true);
+  const [type, setType] = useState(null);
   const [foodItemList, setFoodItemList] = useState(null);
+  const [logisticsList, setLogisticsList] = useState(null);
   const [isSuccessAlertVisible, setSuccessAlertVisible] = useState(false);
   const [delegateID, setDelegateID] = useState("");
+  const [dID, setDid] = useState("");
+  const [RID, setRID] = useState("");
+  const [roomNo, setRoomNo] = useState("");
+  const [accomName, setAccomName] = useState("");
+  const [accomLocation, setAcccomLocation] = useState("");
+  const [idcard, setidcard] = useState(false);
+  const [generic_kit, setgenerickit] = useState(false);
+  const [caricature, setcaricature] = useState(false);
+  const [tshirt, settshirt] = useState(false);
  
   const handleOpen = () => setOpen(!open);
   const navigate = useNavigate()
     useEffect(() => {
-        console.log("Chck auth " + window.localStorage.getItem("authenticated"));
+        // console.log("Chck auth " + window.localStorage.getItem("authenticated"));
         if (window.localStorage.getItem("authenticated") == "true") {
             navigate("/home");
+            // return <Navigate replace to="/home" />;
         } else {
             navigate("/");
         }
@@ -64,20 +80,29 @@ const Home = () => {
 
   // var default_url = "https://script.google.com/macros/s/AKfycbwILDYl0_HJgMsybfYEY0f0KcvU3utj_bFOKiyjcl9BnnnsVRd7-HjkLbecYbk8pRLi/exec";
   // var default_url = "http://127.0.0.1:5000";
-  var default_url = "https://flask-acb6o9jhe-durgaprasadsns-projects.vercel.app";
+  var default_url = "https://flask-bhfus1a4g-durgaprasadsns-projects.vercel.app";
 
-  console.log(dayjs().format('DD/MM/YYYY'));
+  // console.log(dayjs().format('DD/MM/YYYY'));
   const curr_date = dayjs().format('DD/MM/YYYY');
   const errorText = "Something is Wrong";
   const notFound = "User not found";
   var day_selected = -1;
-  var location = [['AI', 'AJ', 'AK', 'AL'], ['AM', 'AN', 'AO', 'AP'], ['AQ', 'AR', 'AS', 'AT'], ['AU', 'AV', 'AW', 'AX']];
-
-  var userid_location = 'C';
-  var logistics_location = 'AH';
+  var location = [['AH', 'AI', 'AJ', 'BD', 'AK'], ['AL', 'AM', 'AN', 'BE', 'AO'], ['AP', 'AQ', 'AR', 'BF', 'AS'], ['AT', 'AU', 'AV', 'BG', 'AW']];
+  var room_details_location = {"delegate_id_column": "B", "district_column": "G", "accomodation_name_column": "I", "accomodation_location_column": "J", "room_no_column": "H"};
+  // ID Card, Generic Kit, Caricature, TShirt
+  var logistics = ["AG", "BA", "BB", "BC"];
+  var tshirt_size_location = "U";
+  var userid_location = 'K';
+  // var logistics_location = 'AH';
+  var hashedid_location = 'AX';
   function create_get_url(date, userid) {
     // return default_url + '?date=' + date + '&name=' + userid;
     return default_url + '/get_user?date=' + date + '&name=' + userid;
+  }
+
+  function create_gethash_url(date, userid) {
+    // return default_url + '?date=' + date + '&name=' + userid;
+    return default_url + '/get_user_delegate?date=' + date + '&name=' + userid;
   }
 
   function create_post_url(type, user, date) {
@@ -90,7 +115,10 @@ const Home = () => {
       url += "&food_type=" + selectedOption;
     }
     if (type === "Logistics") {
-      url += "&logistics=Yes";
+      url += "&logistics=Yes&idcard=" + idcard + "&generic_kit=" + generic_kit + "&caricature=" + caricature + "&tshirt=" + tshirt;
+    }
+    if (type === "Room Details") {
+      url += "&room_details=Yes&room_no=" + roomNo + "&accom_name=" + accomName + "&accom_location=" + accomLocation;
     }
     return url;
   }
@@ -105,10 +133,11 @@ const Home = () => {
   }
 
   const fetchNameFromDB = useCallback(() => {
+    console.log("Type here " + type + " " + result)
     if (result && operationType) {
       const reference = ref(db, "delegates/" + result.text);
-      console.log("String to get " + create_get_url(curr_date, result.text));
-      fetch(create_get_url(curr_date, result.text))
+      console.log("String to get " + create_gethash_url(curr_date, result));
+      fetch((type == "typed") ? create_gethash_url(curr_date, result) : create_get_url(curr_date, result))
         .then(response => response.json())
         .then(data => {
           console.log("data received " + JSON.stringify(data));
@@ -126,7 +155,7 @@ const Home = () => {
             }
           } else {
             console.log("Failure received");
-            setNameFromDB(null);
+            setNameFromDB("Data not found");
             return;
           }
           const dataFromDB = data.response;
@@ -139,7 +168,8 @@ const Home = () => {
               console.log("Durga check here " + index + " " + dataFromDB[index]);
               if (dataFromDB[columnNameToIndex(location[day_selected][0])] === "No") {
                 // Update the checkin details
-                console.log("Checked in is no");
+                console.log("Checked in is no "+ room_details_location["delegate_id_column"] + 'Checejchecjhekcjehk' + dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
+                setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
                 setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
                 setValid(true);
               } else {
@@ -150,7 +180,7 @@ const Home = () => {
               // Food operation has to be performed
               // console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
               const food_data = {};
-              let original = ["breakfast", "lunch", "dinner"];
+              let original = ["Breakfast", "Lunch", "HighTea", "Dinner"];
               
               for (let i = 0; i < original.length; i++) {
                 food_data[original[i]] = dataFromDB[columnNameToIndex(location[day_selected][i+1])];
@@ -165,84 +195,46 @@ const Home = () => {
               setFoodItemList(original);
               if (original.length > 0) {
                 setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
+                setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
                 setValid(true);
               } else {
                 setNameFromDB(dataFromDB[columnNameToIndex(userid_location)] + " Food is already Served");
+                setValid(false);
               }
               
             } else if (operationType === "Logistics") {
               // Logistics operation has to be performed
-              if (dataFromDB[columnNameToIndex(logistics_location)] === "No") {
-                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
-                setValid(true);
-              } else {
-                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)] + " already received");
+              const logistics_data = {};
+              
+              var tshirt_var = "T-Shirt (" + dataFromDB[columnNameToIndex(tshirt_size_location)] + ")";
+              console.log("Check the shirt here " + tshirt_var);
+              let original = ["ID Card", "Generic Kit", "Caricature", tshirt_var];
+              
+              for (let i = 0; i < original.length; i++) {
+                logistics_data[original[i]] = dataFromDB[columnNameToIndex(logistics[i])];
               }
+              setLogisticsList(original);
+              setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
+              setidcard(dataFromDB[columnNameToIndex(logistics[0])] === "No" ? false : true);
+              setgenerickit(dataFromDB[columnNameToIndex(logistics[1])] === "No" ? false : true);
+              setcaricature(dataFromDB[columnNameToIndex(logistics[2])] === "No" ? false : true);
+              settshirt(dataFromDB[columnNameToIndex(logistics[3])] === "No" ? false : true);
+              setValid(true);
+              setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
+            } else if (operationType === "Room Details") {
+              setValid(true);
+              setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
+              setRID(dataFromDB[columnNameToIndex(room_details_location["district_column"])]);
+              setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
+              setAcccomLocation(dataFromDB[columnNameToIndex(room_details_location["accomodation_location_column"])]);
+              setAccomName(dataFromDB[columnNameToIndex(room_details_location["accomodation_name_column"])]);
+              setRoomNo(dataFromDB[columnNameToIndex(room_details_location["room_no_column"])]);
             }
           } else {
             console.log("Data not found");
             setNameFromDB(null); // Set name to null if data is not found
           }
         });
-      // onValue(reference, (snapshot) => {
-      //   const dataFromDB = snapshot.val();
-      //   if (!!dataFromDB) {
-      //     setData(dataFromDB);
-      //     // console.log("Name from DB:", dataFromDB.name);
-      //     const ret_dates = Object.keys(dataFromDB);
-      //     // console.log("Check " + ret_dates + " " + typeof(ret_dates));
-      //     const ret_date = ret_dates.includes(curr_date) ?  curr_date : null;
-      //     // console.log("Temp check " + ret_date);
-          
-      //     if (ret_date && ret_date == curr_date) {
-      //       // console.log("Today is correct" + operationType);
-      //       if (operationType === "Checkin") {
-      //         if (dataFromDB[ret_date].checkedin === "No") {
-      //           // Update the checkin details
-      //           setNameFromDB(dataFromDB.name);
-      //           setValid(true);
-      //         } else {
-      //           setNameFromDB(dataFromDB.name + " already checkedin");
-      //         }
-      //       } else if (operationType === "Food") {
-      //         // Food operation has to be performed
-      //         console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
-      //         const food_data = dataFromDB[ret_date].food;
-      //         let original = ["breakfast", "lunch", "dinner"];
-
-      //         for (let i = original.length - 1; i >= 0; i--) {
-      //           console.log("Check value " + food_data[original[i]] + " " + original[i]);
-      //             if (food_data[original[i]] == "Yes") {
-      //                 original.splice(i, 1);
-      //             }
-      //         }
-
-      //         setFoodItemList(original);
-      //         if (original.length > 0) {
-      //           setNameFromDB(dataFromDB.name);
-      //           setValid(true);
-      //         } else {
-      //           setNameFromDB(dataFromDB.name + " Food is already Served");
-      //         }
-              
-      //       } else if (operationType === "Logistics") {
-      //         // Logistics operation has to be performed
-      //         if (dataFromDB[ret_date].logistics === "No") {
-      //           setNameFromDB(dataFromDB.name);
-      //           setValid(true);
-      //         } else {
-      //           setNameFromDB(dataFromDB.name + " already received");
-      //         }
-      //       }
-      //     } else {
-      //       console.log("Today is not correct");
-      //       setNameFromDB(errorText);
-      //     }
-      //   } else {
-      //     console.log("Data not found");
-      //     setNameFromDB(null); // Set name to null if data is not found
-      //   }
-      // });
     } else {
       console.log("Result or operationType is not available");
       setNameFromDB(null);
@@ -251,6 +243,12 @@ const Home = () => {
 
   const handleOperation = useCallback(() => {
     fetchNameFromDB();
+    setSuccessAlertVisible(false);
+  }, [fetchNameFromDB]);
+
+  const handleHashOperation = useCallback(() => {
+    console.log("Handle hash operation")
+    fetchNameFromDB("hashed");
     setSuccessAlertVisible(false);
   }, [fetchNameFromDB]);
 
@@ -265,7 +263,8 @@ const Home = () => {
   const handleScan = useCallback(
     (data) => {
       if (data) {
-        setResult(data);
+        setType("scaned")
+        setResult(data.text);
         console.log("Operation Type " + operationType);
         stopScanning();
         handleOperation();
@@ -283,14 +282,16 @@ const Home = () => {
   };
 
   const handleConfirmSelection = () => {
-    console.log("Check the values " + result.text + " " + operationType + " " + valid);
+    console.log("Check the values " + result + " " + operationType + " " + valid + " " + dID);
     if (valid) {
       if (operationType === "Food") {
-        handleFoodOperation(result.text);
+        handleFoodOperation(dID);
       } else if (operationType === "Checkin") {
-        handleCheckinOperation(result.text);
+        handleCheckinOperation(dID);
       } else if(operationType === "Logistics") {
-        handleLogsOperation(result.text);
+        handleLogsOperation(dID);
+      } else if(operationType === "Room Details") {
+        handleRoomDetailsOperation(dID);
       }
     }
     setResult(null);
@@ -300,9 +301,26 @@ const Home = () => {
     setSuccessAlertVisible(false);
   }
 
-  const handleLogsOperation = (userid) => {
+  const handleRoomDetailsOperation = (userid) => {
     const path_update = "delegates/" + userid + "/";
 
+    const updates = {"logistics" : "Yes"};
+    console.log(updates);
+    fetch(create_post_url(operationType, userid, curr_date), {
+      method: 'POST',
+    }).then(response => response.json())
+      .then(data => {
+        // Do something with the data
+        console.log("Post return " + data);
+        if (data.success) {
+          setSuccessAlertVisible(true);
+        }
+      });   
+  }
+
+  const handleLogsOperation = (userid) => {
+    const path_update = "delegates/" + userid + "/";
+    console.log(idcard + " " + generic_kit + "  " + caricature + " " + tshirt);
     const updates = {"logistics" : "Yes"};
     console.log(updates);
     fetch(create_post_url(operationType, userid, curr_date), {
@@ -346,7 +364,7 @@ const Home = () => {
     }).then(response => response.json())
       .then(data => {
         // Do something with the data
-        console.log("Post return " + data);
+        console.log("Post return " + JSON.stringify(data));
         if (data.success) {
           setSuccessAlertVisible(true);
         }
@@ -361,11 +379,56 @@ const Home = () => {
 
   function handleIDSubmit() {
     console.log("Check the entered value " + delegateID);
+    setType("typed");
+    setResult(delegateID);
+    stopScanning();
+    handleHashOperation();
+    setSuccessAlertVisible(false);
   }
 
   const handleChangeDelegateID = (event) => {
     setDelegateID(event.target.value);
   };
+
+  const handleChangeDID = (event) => {
+    setDid(event.target.value);
+  };
+
+  const handleChangeRoomNo = (event) => {
+    setRoomNo(event.target.value);
+  };
+
+  const handleChangeDistrict = (event) => {
+    setRID(event.target.value);
+  };
+
+  const handleChangeAccomLocation = (event) => {
+    setAcccomLocation(event.target.value);
+  };
+
+  const handleChangeAccomName = (event) => {
+    setAccomName(event.target.value);
+  };
+
+  const handleIDCardChange = (event) => {
+    console.log("ID HEre " + event.target.checked);
+    setidcard(event.target.checked);
+  }
+
+  const handleGenericKitChange = (event) => {
+    console.log("Kit HEre " + event.target.checked);
+    setgenerickit(event.target.checked);
+  }
+
+  const handleCaricatureChange = (event) => {
+    console.log("Caricature HEre " + event.target.checked);
+    setcaricature(event.target.checked);
+  }
+
+  const handleTshirtChange = (event) => {
+    console.log("T SHirt HEre " + event.target.checked);
+    settshirt(event.target.checked);
+  }
 
   return (
     <div>
@@ -407,8 +470,12 @@ const Home = () => {
               <DialogHeader>Delegate Status</DialogHeader>
               <DialogBody>
                 {nameFromDB ? (<>
-                      <p>{nameFromDB}</p> 
-                      {(operationType === "Food" &&
+                  <div className="flex justify-center py-4">
+                    <div className='content-between'>
+                        <p>{nameFromDB}</p> 
+                    </div>
+                  </div>
+                      {(valid && operationType === "Food" &&
                       foodItemList) ? 
                       <RadioGroup
                         aria-label="options"
@@ -423,10 +490,53 @@ const Home = () => {
                           label={item}
                         />
                       ))}
-                      </RadioGroup> : <></>
+                      </RadioGroup> : (operationType === "Room Details") ? 
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                        <TextField id="delegate_id" className='px-8 py-4' label="Delegate ID" value={dID} onChange={handleChangeDID} InputProps={{ readOnly: true }}/>
+                        <TextField id="district" className='px-8 py-4' label="RI District" value={RID} onChange={handleChangeDistrict} InputProps={{ readOnly: true }}/>
+                        <TextField id="room_no" className='px-8 py-4' label="Room Number" value={roomNo} onChange={handleChangeRoomNo}/>
+                        <TextField id="accommodation_name" className='px-8 py-4' label="Accommodation Name" value={accomName} onChange={handleChangeAccomName}/>
+                        <TextField id="accommodation_location" className='px-8 py-4' label="Accommodation Location" value={accomLocation} onChange={handleChangeAccomLocation}/>
+                        </div>
+                      </> : <>{(operationType === "Logistics" && logisticsList) ? 
+                      <FormGroup>
+                        {/* {logisticsList.map((item) => (
+                        <FormControlLabel
+                          key={item} // Replace with a unique identifier for each item
+                          value={item}
+                          control={<Checkbox checked={true} onChange={handleIDCardChange} name={item} />}
+                          label={item}
+                        />
+                      ))} */}
+                      <FormControlLabel
+                        control={
+                          <Checkbox checked={idcard} onChange={handleIDCardChange} name={logisticsList[0]} />
+                        }
+                        label={logisticsList[0]}
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox checked={generic_kit} onChange={handleGenericKitChange} name={logisticsList[1]} />
+                        }
+                        label={logisticsList[1]}
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox checked={caricature} onChange={handleCaricatureChange} name={logisticsList[2]} />
+                        }
+                        label={logisticsList[2]}
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox checked={tshirt} onChange={handleTshirtChange} name={logisticsList[3]} />
+                        }
+                        label={logisticsList[3]}
+                      /> 
+                    </FormGroup> : <></>}</>
                     }
                     </>) : (
-                      <p>Name not found in DB</p>
+                      <p>{nameFromDB}</p>
                     )}
                       
               </DialogBody>
@@ -438,10 +548,11 @@ const Home = () => {
             </div>
           </Dialog>
         </>) : (<>
-          <div className='flex items-center justify-center space-x-4 mt-40'>
+          <div className='flex items-center justify-center space-x-3 mt-40'>
             <Button id="checkin" type="submit" variant="contained" className="mb-8" onClick={() => startScanning('Checkin')}>Checkin</Button>
             <Button id="food" type="submit" variant="contained" className='mb-8' onClick={() => startScanning('Food')}>Food</Button>
-            <Button id="logistics" type="submit" variant="contained" onClick={() => startScanning('Logistics')}>Logistics</Button>
+            <Button id="logistics" type="submit" variant="contained" className='mb-8' onClick={() => startScanning('Logistics')}>Logistics</Button>
+            <Button id="room" type="submit" variant="contained" className='mb-8' onClick={() => startScanning('Room Details')}>Room Details</Button>
           </div>
         </>)}
         

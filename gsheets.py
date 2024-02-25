@@ -54,8 +54,13 @@ print(nrows, ncols)
 delegate_id_index = column_name_to_index(delegate_id_location) + 1
 index_to_be_updated = column_name_to_index(hashed_id_location) + 1
 
-for i in range(2, nrows):
-    time.sleep(5)
+count = 0
+for i in range(2, nrows+1):
+    count += 1
+    if (count > 50):
+        count = 0
+        print("Sleeping for 5 secs")
+        time.sleep(15)
     delegate_id = worksheet.cell(i, delegate_id_index).value
     hashed_id = hash_string(delegate_id)
     print(delegate_id, hashed_id)
