@@ -80,19 +80,21 @@ const Home = () => {
 
   // var default_url = "https://script.google.com/macros/s/AKfycbwILDYl0_HJgMsybfYEY0f0KcvU3utj_bFOKiyjcl9BnnnsVRd7-HjkLbecYbk8pRLi/exec";
   // var default_url = "http://127.0.0.1:5000";
-  var default_url = "https://flask-bhfus1a4g-durgaprasadsns-projects.vercel.app";
+  var default_url = "https://flask-d78134906-durgaprasadsns-projects.vercel.app";
 
-  // console.log(dayjs().format('DD/MM/YYYY'));
+  // console.log(auth.currentUser.email);
   const curr_date = dayjs().format('DD/MM/YYYY');
   const errorText = "Something is Wrong";
   const notFound = "User not found";
   var day_selected = -1;
-  var location = [['AH', 'AI', 'AJ', 'BD', 'AK'], ['AL', 'AM', 'AN', 'BE', 'AO'], ['AP', 'AQ', 'AR', 'BF', 'AS'], ['AT', 'AU', 'AV', 'BG', 'AW']];
-  var room_details_location = {"delegate_id_column": "B", "district_column": "G", "accomodation_name_column": "I", "accomodation_location_column": "J", "room_no_column": "H"};
+
+  var location = [['AK', 'AL', 'AM', 'AN', 'AO'], ['AP', 'AQ', 'AR', 'AS', 'AT'], ['AU', 'AV', 'AW', 'AX', 'AY'], ['AZ', 'BA', 'BB', 'BC', 'BD']]
+  var room_details_location = {"delegate_id_column": "B", "district_column": "K", "accomodation_name_column": "N", "accomodation_location_column": "O", "room_no_column": "M"}
   // ID Card, Generic Kit, Caricature, TShirt
-  var logistics = ["AG", "BA", "BB", "BC"];
-  var tshirt_size_location = "U";
-  var userid_location = 'K';
+  var logistics = ["AG", "AH", "AI", "AJ"]
+
+  var tshirt_size_location = "X";
+  var userid_location = 'I';
   // var logistics_location = 'AH';
   var hashedid_location = 'AX';
   function create_get_url(date, userid) {
