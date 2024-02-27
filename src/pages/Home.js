@@ -80,7 +80,7 @@ const Home = () => {
 
   // var default_url = "https://script.google.com/macros/s/AKfycbwILDYl0_HJgMsybfYEY0f0KcvU3utj_bFOKiyjcl9BnnnsVRd7-HjkLbecYbk8pRLi/exec";
   // var default_url = "http://127.0.0.1:5000";
-  var default_url = "https://flask-d78134906-durgaprasadsns-projects.vercel.app";
+  var default_url = "https://flask-gqwgb9yu9-durgaprasadsns-projects.vercel.app";
 
   // console.log(auth.currentUser.email);
   const curr_date = dayjs().format('DD/MM/YYYY');
