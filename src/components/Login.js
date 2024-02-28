@@ -13,7 +13,7 @@ let fieldsState = {};
 fields.forEach(field=>fieldsState[field.id]='');
 
 export default function Login(){
-    console.log("Check Authentication " + isAuthenticated());
+    // console.log("Check Authentication " + isAuthenticated());
     const [loginState,setLoginState]=useState(fieldsState);
     const [error, setError] = useState(null);
 

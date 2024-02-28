@@ -7,7 +7,7 @@ import Home from "./Home"
 export default function LoginPage(){
     const navigate = useNavigate()
     useEffect(() => {
-        console.log("Chck auth " + window.localStorage.getItem("authenticated"));
+        // console.log("Chck auth " + window.localStorage.getItem("authenticated"));
         if (window.localStorage.getItem("authenticated") == "true") {
             navigate("/home");
         } else {
