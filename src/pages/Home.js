@@ -150,6 +150,7 @@ const Home = () => {
             setDid(value);
             setNameFromDB(dataFromDB['name']);
             setValid(true);
+            setRID(dataFromDB.district)
           } else {
             setNameFromDB(dataFromDB.name + " already checkedin");
           }
@@ -716,7 +717,10 @@ const Home = () => {
                 {nameFromDB ? (<>
                   <div className="flex justify-center py-4">
                     <div className='content-between'>
-                        <p>{nameFromDB}</p> 
+                        <p>{nameFromDB}</p>
+                        <div className='flex justify-center content-between'>
+                        <p>{RID}</p>
+                        </div>
                     </div>
                   </div>
                       {
