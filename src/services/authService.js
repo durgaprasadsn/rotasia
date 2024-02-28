@@ -56,19 +56,38 @@ const insert = async (path, json) => {
     }
 }
 
-const getFromDB = async (path) => {
-    try {
-        get(child(ref(db), path)).then((snapshot) => {
-            if (snapshot.exists()) {
-                console.log("Snapshot in get " + snapshot.val());
-                return snapshot.val();
-            } else {
-                console.log("Data not found");
-            }
-        });
-    } catch (error) {
-        console.log("Error in getting the data from DB");
-    }
+// const getFromDB = (path) => {
+//     try {
+//         get(child(ref(db), path)).then((snapshot) => {
+//             if (snapshot.exists()) {
+//                 console.log("Snapshot in get " + snapshot.val());
+//                 return snapshot.val();
+//             } else {
+//                 console.log("Data not found");
+//             }
+//         });
+//     } catch (error) {
+//         console.log("Error in getting the data from DB");
+//     }
+// }
+
+const getFromDB = (path) => {
+  return new Promise((resolve, reject) => {
+      try {
+          get(child(ref(db), path)).then((snapshot) => {
+              if (snapshot.exists()) {
+                  console.log("Snapshot in get " + snapshot.val());
+                  resolve(snapshot.val()); // Resolve the promise with the value
+              } else {
+                  console.log("Data not found");
+                  resolve(null); // Resolve with null if data not found
+              }
+          });
+      } catch (error) {
+          console.log("Error in getting the data from DB");
+          reject(error); // Reject the promise if there's an error
+      }
+  });
 }
 
 const onValueFromDB = async (path) => {

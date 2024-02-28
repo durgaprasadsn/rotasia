@@ -10,13 +10,14 @@ import { getDatabase } from 'firebase/database';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBOhis9S5zvTr2WEVW3vrYfUEpoIQQzLTY",
-  authDomain: "rotasia.firebaseapp.com",
-  projectId: "rotasia",
-  storageBucket: "rotasia.appspot.com",
-  messagingSenderId: "634135864945",
-  appId: "1:634135864945:web:f6a6fef18bb3573608ddd0",
-  measurementId: "G-G39NJ82X1S"
+  apiKey: "AIzaSyCh57yMXhbMk0mgqYW9pl9D3I2lRiKSPrg",
+  authDomain: "rotasia-tech.firebaseapp.com",
+  databaseURL: "https://rotasia-tech-default-rtdb.firebaseio.com",
+  projectId: "rotasia-tech",
+  storageBucket: "rotasia-tech.appspot.com",
+  messagingSenderId: "348614049409",
+  appId: "1:348614049409:web:928e73e282e6d270381780",
+  measurementId: "G-ZXDJMZ2BVN"
 };
 
 // Initialize Firebase

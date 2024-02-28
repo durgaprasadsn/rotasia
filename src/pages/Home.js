@@ -4,7 +4,7 @@ import Button from '@mui/material/Button';
 import QrScanner from 'react-qr-scanner';
 import NavbarSimple from '../components/Navbar';
 import dayjs from 'dayjs';
-import { insert } from '../services/authService';
+import { getFromDB, insert } from '../services/authService';
 import {
   Dialog,
   DialogHeader,
@@ -16,7 +16,7 @@ import RadioGroup from '@mui/material/RadioGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { Alert } from '@mui/material';
 
-import { ref, onValue, update } from '@firebase/database';
+import { ref, get, set, child, onValue, update } from '@firebase/database';
 import { auth, db } from '../services/firebase';
 import { data } from 'autoprefixer';
 import { CurrencyExchange } from '@mui/icons-material';
@@ -51,6 +51,9 @@ const Home = () => {
   const [generic_kit, setgenerickit] = useState(false);
   const [caricature, setcaricature] = useState(false);
   const [tshirt, settshirt] = useState(false);
+  const [validDay, setValidDay] = useState("");
+  const [tshirtVar, setthsirtVar] = useState("");
+  const [foodType, setFoodType] = useState("");
  
   const handleOpen = () => setOpen(!open);
   const navigate = useNavigate()
@@ -83,7 +86,7 @@ const Home = () => {
   var default_url = "https://flask-gqwgb9yu9-durgaprasadsns-projects.vercel.app";
 
   // console.log(auth.currentUser.email);
-  const curr_date = dayjs().format('DD/MM/YYYY');
+  const curr_date = dayjs().format('DD-MM-YYYY');
   const errorText = "Something is Wrong";
   const notFound = "User not found";
   var day_selected = -1;
@@ -134,109 +137,299 @@ const Home = () => {
     return index - 1; // Adjust index to be 0-based
   }
 
+  function performOperation(value, day_today) {
+    console.log(value);
+    get(child(ref(db), "delegates/" + value)).then((snapshot) => {
+      if (snapshot.exists()) {
+        const dataFromDB = snapshot.val();
+        
+        console.log("Snapshot in get " + JSON.stringify(dataFromDB[day_today]) + " " + dataFromDB[day_today]['Checkedin']);
+        if (operationType === "Checkin") {
+          if (dataFromDB[day_today]['Checkedin'] === "No") {
+            setDid(value);
+            setNameFromDB(dataFromDB['name']);
+            setValid(true);
+          } else {
+            setNameFromDB(dataFromDB.name + " already checkedin");
+          }
+        }  else if (operationType === "Food") {
+          // Food operation has to be performed
+          // console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
+          // const food_data = {};
+          // let original = ["Breakfast", "Lunch", "HighTea", "Dinner"];
+          
+          // for (let i = 0; i < original.length; i++) {
+          //   food_data[original[i]] = dataFromDB[day_today][original[i]];
+          // }
+          get(child(ref(db), "food/")).then((snapshot) => {
+            if (snapshot.exists()) {
+                const food_data = snapshot.val();
+                console.log("Snapshot in get " + JSON.stringify(food_data));
+                setFoodType(food_data.food_type)
+                if (dataFromDB[day_today][food_data.food_type] == 'No') {
+                  setNameFromDB(dataFromDB.name);
+                  setDid(value);
+                  setValid(true);
+                } else {
+                  setNameFromDB(dataFromDB.name + " - " + food_data.food_type + " is already served. ");
+                  setValid(false);
+                }
+            } else {
+                console.log("Data not found");
+                setNameFromDB("Data not Found");
+            }
+          });
+          
+          // for (let i = original.length - 1; i >= 0; i--) {
+          //   console.log("Check value " + food_data[original[i]] + " " + original[i]);
+          //     if (food_data[original[i]] == "Yes") {
+          //         original.splice(i, 1);
+          //     }
+          // }
+
+          // setFoodItemList(original);
+          // if (original.length > 0) {
+          //   setNameFromDB(dataFromDB.name);
+          //   setDid(value);
+          //   setValid(true);
+          // } else {
+          //   setNameFromDB(dataFromDB.name + " Food is already Served");
+          //   setValid(false);
+          // }
+        } else if (operationType === "Logistics") {
+          // Logistics operation has to be performed
+          const logistics_data = {};
+          console.log(dataFromDB);
+          var tshirt_var = "T-Shirt (" + dataFromDB.tshirt + ")";
+          setthsirtVar(tshirt_var);
+          console.log("Check the shirt here " + tshirt_var);
+          let original = ["IDCard", "GenericKit", "Caricature", tshirt_var];
+          
+          for (let i = 0; i < original.length; i++) {
+            logistics_data[original[i]] = dataFromDB['logistics'][original[i]];
+            console.log(logistics_data[original[i]]);
+          }
+
+          setLogisticsList(original);
+          setNameFromDB(dataFromDB.name);
+          setidcard(dataFromDB['logistics'][original[0]] === "No" ? false : true);
+          setgenerickit(dataFromDB['logistics'][original[1]] === "No" ? false : true);
+          setcaricature(dataFromDB['logistics'][original[2]] === "No" ? false : true);
+          settshirt(dataFromDB['logistics'][original[3]] === "No" ? false : true);
+          setValid(true);
+          setDid(value);
+        } else if (operationType === "Room Details") {
+          setValid(true);
+          setNameFromDB(dataFromDB.name);
+          setRID(dataFromDB.district);
+          setDid(value);
+          setAcccomLocation(dataFromDB['room_details']['accomodationLocation']);
+          setAccomName(dataFromDB['room_details']['accomodationName']);
+          setRoomNo(dataFromDB['room_details']['roomNo']);
+        }
+      } else {
+          console.log("Data not found");
+          setNameFromDB("Data not Found");
+      }
+    });
+  }
+
   const fetchNameFromDB = useCallback(() => {
     console.log("Type here " + type + " " + result)
     if (result && operationType) {
-      const reference = ref(db, "delegates/" + result.text);
       console.log("String to get " + create_gethash_url(curr_date, result));
-      fetch((type == "typed") ? create_gethash_url(curr_date, result) : create_get_url(curr_date, result))
-        .then(response => response.json())
-        .then(data => {
-          console.log("data received " + JSON.stringify(data));
-          if (data.success) {
-            console.log("Sucess received");
-            var selected = data.day;
-            if (selected == 'Day1') {
-              day_selected = 0;
-            } else if (selected == 'Day2') {
-              day_selected = 1;
-            } else if (selected == 'Day3') {
-              day_selected = 2;
-            } else if (selected == 'Day4') {
-              day_selected = 3;
-            }
-          } else {
-            console.log("Failure received");
-            setNameFromDB("Data not found");
-            return;
-          }
-          const dataFromDB = data.response;
-          console.log("Check the status and data  " + operationType + " " + data.success + " " + dataFromDB);
-          if (!!dataFromDB) {
-            setData(dataFromDB);
-            // console.log("Today is correct" + operationType);
-            if (operationType === "Checkin") {
-              let index = columnNameToIndex('AI');
-              console.log("Durga check here " + index + " " + dataFromDB[index]);
-              if (dataFromDB[columnNameToIndex(location[day_selected][0])] === "No") {
-                // Update the checkin details
-                console.log("Checked in is no "+ room_details_location["delegate_id_column"] + 'Checejchecjhekcjehk' + dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
-                setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
-                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
-                setValid(true);
+      const reference = ref(db, "map/" + result);
+      get(child(ref(db), "date/" + curr_date)).then((snapshot) => {
+          if (snapshot.exists()) {
+              console.log("Snapshot in get " + snapshot.val() + type);
+              const day_today = snapshot.val();
+              setValidDay(day_today);
+              if (type == "typed") {
+                console.log("TYpe " + result)
+                performOperation(result, day_today);
+                // get(child(ref(db), "map/" + result.text)).then((snapshot) => {
+                //     if (snapshot.exists()) {
+                //         console.log("Snapshot in get " + snapshot.val());
+                //         return snapshot.val();
+                //     } else {
+                //         console.log("Data not found");
+                //     }
+                // });
               } else {
-                console.log("Checkedin yes");
-                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)] + " already checkedin");
-              }
-            } else if (operationType === "Food") {
-              // Food operation has to be performed
-              // console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
-              const food_data = {};
-              let original = ["Breakfast", "Lunch", "HighTea", "Dinner"];
-              
-              for (let i = 0; i < original.length; i++) {
-                food_data[original[i]] = dataFromDB[columnNameToIndex(location[day_selected][i+1])];
-              }
-              for (let i = original.length - 1; i >= 0; i--) {
-                console.log("Check value " + food_data[original[i]] + " " + original[i]);
-                  if (food_data[original[i]] == "Yes") {
-                      original.splice(i, 1);
+                get(child(ref(db), "map/" + result)).then((snapshot) => {
+                  if (snapshot.exists()) {
+                      console.log("Snapshot in get " + snapshot.val());
+                      performOperation(snapshot.val(), day_today);
+                  } else {
+                      console.log("Data not found");
+                      setNameFromDB("Data not Found");
                   }
+                });
               }
-
-              setFoodItemList(original);
-              if (original.length > 0) {
-                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
-                setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
-                setValid(true);
-              } else {
-                setNameFromDB(dataFromDB[columnNameToIndex(userid_location)] + " Food is already Served");
-                setValid(false);
-              }
-              
-            } else if (operationType === "Logistics") {
-              // Logistics operation has to be performed
-              const logistics_data = {};
-              
-              var tshirt_var = "T-Shirt (" + dataFromDB[columnNameToIndex(tshirt_size_location)] + ")";
-              console.log("Check the shirt here " + tshirt_var);
-              let original = ["ID Card", "Generic Kit", "Caricature", tshirt_var];
-              
-              for (let i = 0; i < original.length; i++) {
-                logistics_data[original[i]] = dataFromDB[columnNameToIndex(logistics[i])];
-              }
-              setLogisticsList(original);
-              setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
-              setidcard(dataFromDB[columnNameToIndex(logistics[0])] === "No" ? false : true);
-              setgenerickit(dataFromDB[columnNameToIndex(logistics[1])] === "No" ? false : true);
-              setcaricature(dataFromDB[columnNameToIndex(logistics[2])] === "No" ? false : true);
-              settshirt(dataFromDB[columnNameToIndex(logistics[3])] === "No" ? false : true);
-              setValid(true);
-              setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
-            } else if (operationType === "Room Details") {
-              setValid(true);
-              setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
-              setRID(dataFromDB[columnNameToIndex(room_details_location["district_column"])]);
-              setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
-              setAcccomLocation(dataFromDB[columnNameToIndex(room_details_location["accomodation_location_column"])]);
-              setAccomName(dataFromDB[columnNameToIndex(room_details_location["accomodation_name_column"])]);
-              setRoomNo(dataFromDB[columnNameToIndex(room_details_location["room_no_column"])]);
-            }
           } else {
-            console.log("Data not found");
-            setNameFromDB(null); // Set name to null if data is not found
+              console.log("Data not found");
+              setNameFromDB("Data not Found");
           }
-        });
+      });
+      // const day = getFromDB("date/" + curr_date)
+      // console.log("Day here " + day.value);
+      // onValue(reference, (snapshot) => {
+      //   const dataFromDB = snapshot.val();
+      //   if (!!dataFromDB) {
+      //     setData(dataFromDB);
+      //     // console.log("Name from DB:", dataFromDB.name);
+      //     const ret_dates = Object.keys(dataFromDB);
+      //     // console.log("Check " + ret_dates + " " + typeof(ret_dates));
+      //     const ret_date = ret_dates.includes(curr_date) ?  curr_date : null;
+      //     // console.log("Temp check " + ret_date);
+          
+      //     if (ret_date && ret_date == curr_date) {
+      //       // console.log("Today is correct" + operationType);
+      //       if (operationType === "Checkin") {
+      //         if (dataFromDB[ret_date].checkedin === "No") {
+      //           // Update the checkin details
+      //           setNameFromDB(dataFromDB.name);
+      //           setValid(true);
+      //         } else {
+      //           setNameFromDB(dataFromDB.name + " already checkedin");
+      //         }
+      //       } else if (operationType === "Food") {
+      //         // Food operation has to be performed
+      //         console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
+      //         const food_data = dataFromDB[ret_date].food;
+      //         let original = ["breakfast", "lunch", "dinner"];
+
+      //         for (let i = original.length - 1; i >= 0; i--) {
+      //           console.log("Check value " + food_data[original[i]] + " " + original[i]);
+      //             if (food_data[original[i]] == "Yes") {
+      //                 original.splice(i, 1);
+      //             }
+      //         }
+
+      //         setFoodItemList(original);
+      //         if (original.length > 0) {
+      //           setNameFromDB(dataFromDB.name);
+      //           setValid(true);
+      //         } else {
+      //           setNameFromDB(dataFromDB.name + " Food is already Served");
+      //         }
+              
+      //       } else if (operationType === "Logistics") {
+      //         // Logistics operation has to be performed
+      //         if (dataFromDB[ret_date].logistics === "No") {
+      //           setNameFromDB(dataFromDB.name);
+      //           setValid(true);
+      //         } else {
+      //           setNameFromDB(dataFromDB.name + " already received");
+      //         }
+      //       }
+      //     } else {
+      //       console.log("Today is not correct");
+      //       setNameFromDB(errorText);
+      //     }
+      //   } else {
+      //     console.log("Data not found");
+      //     setNameFromDB(null); // Set name to null if data is not found
+      //   }
+      // });
+      // fetch((type == "typed") ? create_gethash_url(curr_date, result) : create_get_url(curr_date, result))
+      //   .then(response => response.json())
+      //   .then(data => {
+      //     console.log("data received " + JSON.stringify(data));
+      //     if (data.success) {
+      //       console.log("Sucess received");
+      //       var selected = data.day;
+      //       if (selected == 'Day1') {
+      //         day_selected = 0;
+      //       } else if (selected == 'Day2') {
+      //         day_selected = 1;
+      //       } else if (selected == 'Day3') {
+      //         day_selected = 2;
+      //       } else if (selected == 'Day4') {
+      //         day_selected = 3;
+      //       }
+      //     } else {
+      //       console.log("Failure received");
+      //       setNameFromDB("Data not found");
+      //       return;
+      //     }
+      //     const dataFromDB = data.response;
+      //     console.log("Check the status and data  " + operationType + " " + data.success + " " + dataFromDB);
+      //     if (!!dataFromDB) {
+      //       setData(dataFromDB);
+      //       // console.log("Today is correct" + operationType);
+      //       if (operationType === "Checkin") {
+      //         let index = columnNameToIndex('AI');
+      //         console.log("Durga check here " + index + " " + dataFromDB[index]);
+      //         if (dataFromDB[columnNameToIndex(location[day_selected][0])] === "No") {
+      //           // Update the checkin details
+      //           console.log("Checked in is no "+ room_details_location["delegate_id_column"] + 'Checejchecjhekcjehk' + dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
+      //           setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
+      //           setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
+      //           setValid(true);
+      //         } else {
+      //           console.log("Checkedin yes");
+      //           setNameFromDB(dataFromDB[columnNameToIndex(userid_location)] + " already checkedin");
+      //         }
+      //       } else if (operationType === "Food") {
+      //         // Food operation has to be performed
+      //         // console.log("Food validate " + JSON.stringify(dataFromDB[ret_date].food) +  " " + Object.keys(dataFromDB[ret_date].food));
+      //         const food_data = {};
+      //         let original = ["Breakfast", "Lunch", "HighTea", "Dinner"];
+              
+      //         for (let i = 0; i < original.length; i++) {
+      //           food_data[original[i]] = dataFromDB[columnNameToIndex(location[day_selected][i+1])];
+      //         }
+      //         for (let i = original.length - 1; i >= 0; i--) {
+      //           console.log("Check value " + food_data[original[i]] + " " + original[i]);
+      //             if (food_data[original[i]] == "Yes") {
+      //                 original.splice(i, 1);
+      //             }
+      //         }
+
+      //         setFoodItemList(original);
+      //         if (original.length > 0) {
+      //           setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
+      //           setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
+      //           setValid(true);
+      //         } else {
+      //           setNameFromDB(dataFromDB[columnNameToIndex(userid_location)] + " Food is already Served");
+      //           setValid(false);
+      //         }
+              
+      //       } else if (operationType === "Logistics") {
+      //         // Logistics operation has to be performed
+      //         const logistics_data = {};
+              
+      //         var tshirt_var = "T-Shirt (" + dataFromDB[columnNameToIndex(tshirt_size_location)] + ")";
+      //         console.log("Check the shirt here " + tshirt_var);
+      //         let original = ["ID Card", "Generic Kit", "Caricature", tshirt_var];
+              
+      //         for (let i = 0; i < original.length; i++) {
+      //           logistics_data[original[i]] = dataFromDB[columnNameToIndex(logistics[i])];
+      //         }
+      //         setLogisticsList(original);
+      //         setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
+      //         setidcard(dataFromDB[columnNameToIndex(logistics[0])] === "No" ? false : true);
+      //         setgenerickit(dataFromDB[columnNameToIndex(logistics[1])] === "No" ? false : true);
+      //         setcaricature(dataFromDB[columnNameToIndex(logistics[2])] === "No" ? false : true);
+      //         settshirt(dataFromDB[columnNameToIndex(logistics[3])] === "No" ? false : true);
+      //         setValid(true);
+      //         setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
+      //       } else if (operationType === "Room Details") {
+      //         setValid(true);
+      //         setNameFromDB(dataFromDB[columnNameToIndex(userid_location)]);
+      //         setRID(dataFromDB[columnNameToIndex(room_details_location["district_column"])]);
+      //         setDid(dataFromDB[columnNameToIndex(room_details_location["delegate_id_column"])]);
+      //         setAcccomLocation(dataFromDB[columnNameToIndex(room_details_location["accomodation_location_column"])]);
+      //         setAccomName(dataFromDB[columnNameToIndex(room_details_location["accomodation_name_column"])]);
+      //         setRoomNo(dataFromDB[columnNameToIndex(room_details_location["room_no_column"])]);
+      //       }
+      //     } else {
+      //       console.log("Data not found");
+      //       setNameFromDB(null); // Set name to null if data is not found
+      //     }
+      //   });
     } else {
       console.log("Result or operationType is not available");
       setNameFromDB(null);
@@ -304,73 +497,121 @@ const Home = () => {
   }
 
   const handleRoomDetailsOperation = (userid) => {
-    const path_update = "delegates/" + userid + "/";
-
-    const updates = {"logistics" : "Yes"};
+    const path_update = "delegates/" + userid + "/room_details/";
+    const updates = {'roomNo': roomNo, 'accomodationLocation': accomLocation, 'accomodationName': accomName};
     console.log(updates);
-    fetch(create_post_url(operationType, userid, curr_date), {
-      method: 'POST',
-    }).then(response => response.json())
-      .then(data => {
-        // Do something with the data
-        console.log("Post return " + data);
-        if (data.success) {
-          setSuccessAlertVisible(true);
-        }
-      });   
+    update(ref(db, path_update), updates).then( () => {
+      console.log("SUCCESS");
+      setSuccessAlertVisible(true);
+    } ) .catch((error) => {
+      console.log(error);
+    } )
+    // fetch(create_post_url(operationType, userid, curr_date), {
+    //   method: 'POST',
+    // }).then(response => response.json())
+    //   .then(data => {
+    //     // Do something with the data
+    //     console.log("Post return " + data);
+    //     if (data.success) {
+    //       setSuccessAlertVisible(true);
+    //     }
+    //   });   
   }
 
   const handleLogsOperation = (userid) => {
-    const path_update = "delegates/" + userid + "/";
-    console.log(idcard + " " + generic_kit + "  " + caricature + " " + tshirt);
-    const updates = {"logistics" : "Yes"};
+    const path_update = "delegates/" + userid + "/logistics/";
+    // var tshirt_var = "T-Shirt (" + dataFromDB.tshirt + ")";
+    console.log("Check the shirt here " + tshirtVar);
+    let original = ["IDCard", "GenericKit", "Caricature", tshirtVar];
+    const updates = {};
+    if (idcard) {
+      updates[original[0]] = "Yes";
+    } else {
+      updates[original[0]] = "No";
+    }
+    if (generic_kit) {
+      updates[original[1]] = "Yes";
+    } else {
+      updates[original[1]] = "No";
+    }
+    if (caricature) {
+      updates[original[2]] = "Yes";
+    } else {
+      updates[original[2]] = "No";
+    }
+    if (tshirt) {
+      updates[original[3]] = "Yes";
+    } else {
+      updates[original[3]] = "No";
+    }
     console.log(updates);
-    fetch(create_post_url(operationType, userid, curr_date), {
-      method: 'POST',
-    }).then(response => response.json())
-      .then(data => {
-        // Do something with the data
-        console.log("Post return " + data);
-        if (data.success) {
-          setSuccessAlertVisible(true);
-        }
-      });   
+    update(ref(db, path_update), updates).then( () => {
+        console.log("SUCCESS");
+        setSuccessAlertVisible(true);
+      } ) .catch((error) => {
+        console.log(error);
+      } )
+    // fetch(create_post_url(operationType, userid, curr_date), {
+    //   method: 'POST',
+    // }).then(response => response.json())
+    //   .then(data => {
+    //     // Do something with the data
+    //     console.log("Post return " + data);
+    //     if (data.success) {
+    //       setSuccessAlertVisible(true);
+    //     }
+    //   });   
   }
 
   const handleFoodOperation = (userid) => {
-    const path_update = "delegates/" + userid + "/" + curr_date + "/food/";
-    console.log("Food check " + selectedOption);
+    const path_update = "delegates/" + userid + "/" + validDay + "/";
+    console.log("Food check " + selectedOption + " " + foodType);
 
-    const updates = {[selectedOption] : "Yes"};
+    const updates = {};
+    updates[foodType] = "Yes";
     console.log(updates);
-    fetch(create_post_url(operationType, userid, curr_date), {
-      method: 'POST',
-    }).then(response => response.json())
-      .then(data => {
-        // Do something with the data
-        console.log("Post return " + data);
-        if (data.success) {
-          setSuccessAlertVisible(true);
-        }
-      });
+    update(ref(db, path_update), updates).then( () => {
+        console.log("SUCCESS");
+        setSuccessAlertVisible(true);
+      } ) .catch((error) => {
+        console.log(error);
+      } )
+    // console.log(updates);
+    // fetch(create_post_url(operationType, userid, curr_date), {
+    //   method: 'POST',
+    // }).then(response => response.json())
+    //   .then(data => {
+    //     // Do something with the data
+    //     console.log("Post return " + data);
+    //     if (data.success) {
+    //       setSuccessAlertVisible(true);
+    //     }
+    //   });
   }
 
   const handleCheckinOperation = (userid) => {
     // const updates = {}
-    const path_update = "delegates/" + userid + "/" + curr_date + "/";
-    console.log("Check the path " + path_update);
-    const updates = {"checkedin": "Yes"};
-    console.log("Check the url " + create_post_url(operationType, userid, curr_date));
-    fetch(create_post_url(operationType, userid, curr_date), {
-      method: 'POST',
-    }).then(response => response.json())
-      .then(data => {
-        // Do something with the data
-        console.log("Post return " + JSON.stringify(data));
-        if (data.success) {
-          setSuccessAlertVisible(true);
-        }
-      });
+    const path_update = "delegates/" + userid + "/" + validDay + "/";
+    console.log("Check the path " + path_update + " " + validDay);
+    const updates = {"Checkedin": "Yes"};
+
+    update(ref(db, path_update), updates).then( () => {
+        console.log("SUCCESS");
+        setSuccessAlertVisible(true);
+      } ) .catch((error) => {
+        console.log(error);
+      } )
+    // console.log("Check the url " + create_post_url(operationType, userid, curr_date));
+    // fetch(create_post_url(operationType, userid, curr_date), {
+    //   method: 'POST',
+    // }).then(response => response.json())
+    //   .then(data => {
+    //     // Do something with the data
+    //     console.log("Post return " + JSON.stringify(data));
+    //     if (data.success) {
+    //       setSuccessAlertVisible(true);
+    //     }
+    //   });
   }
 
   const handleCancelSelection = () => {
@@ -477,22 +718,24 @@ const Home = () => {
                         <p>{nameFromDB}</p> 
                     </div>
                   </div>
-                      {(valid && operationType === "Food" &&
-                      foodItemList) ? 
-                      <RadioGroup
-                        aria-label="options"
-                        name="options"
-                        value={selectedOption}
-                        onChange={handleOptionChange}>
-                      {foodItemList.map((item) => (
-                        <FormControlLabel
-                          key={item} // Replace with a unique identifier for each item
-                          value={item}
-                          control={<Radio />}
-                          label={item}
-                        />
-                      ))}
-                      </RadioGroup> : (operationType === "Room Details") ? 
+                      {
+                      // (valid && operationType === "Food" &&
+                      // foodItemList) ? 
+                      // <RadioGroup
+                      //   aria-label="options"
+                      //   name="options"
+                      //   value={selectedOption}
+                      //   onChange={handleOptionChange}>
+                      // {foodItemList.map((item) => (
+                      //   <FormControlLabel
+                      //     key={item} // Replace with a unique identifier for each item
+                      //     value={item}
+                      //     control={<Radio />}
+                      //     label={item}
+                      //   />
+                      // ))}
+                      // </RadioGroup> : 
+                      (operationType === "Room Details") ? 
                       <>
                         <div className="grid grid-cols-2 gap-4">
                         <TextField id="delegate_id" className='px-8 py-4' label="Delegate ID" value={dID} onChange={handleChangeDID} InputProps={{ readOnly: true }}/>
@@ -503,14 +746,6 @@ const Home = () => {
                         </div>
                       </> : <>{(operationType === "Logistics" && logisticsList) ? 
                       <FormGroup>
-                        {/* {logisticsList.map((item) => (
-                        <FormControlLabel
-                          key={item} // Replace with a unique identifier for each item
-                          value={item}
-                          control={<Checkbox checked={true} onChange={handleIDCardChange} name={item} />}
-                          label={item}
-                        />
-                      ))} */}
                       <FormControlLabel
                         control={
                           <Checkbox checked={idcard} onChange={handleIDCardChange} name={logisticsList[0]} />
