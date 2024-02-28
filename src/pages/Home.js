@@ -65,7 +65,8 @@ const Home = () => {
         } else {
             navigate("/");
         }
-    })
+    }, []);
+
   const stopScanning = useCallback(() => {
     setScanning(false);
     // Perform any additional cleanup or actions if needed
