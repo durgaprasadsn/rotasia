@@ -13,7 +13,7 @@ export default function LoginPage(){
         } else {
             navigate("/");
         }
-    })
+    }, [])
     return(
         <>
             {window.localStorage.getItem("authenticated") == "true" ? 
